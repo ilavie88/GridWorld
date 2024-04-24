@@ -15,6 +15,20 @@ small_world=\
     wwwwwwwwwwwwwwwww
     """
 
+train_world=\
+    """
+    wwwwwwwwwwwwwwwww
+    wa              w
+    w               w
+    w               w
+    w         g     w
+    w               w
+    w               w
+    w               w
+    w               w
+    wwwwwwwwwwwwwwwww
+    """
+
 big_world=\
     """
     wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -60,6 +74,7 @@ big_world=\
     wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
     """
 
+train_env_fn=lambda seed:GridWorld(train_world,slip=0.2,log=False,max_episode_step=1000,random_state=seed) # ilavie - changed seed = seed to random_states=seed
 small_env_fn=lambda seed:GridWorld(small_world,slip=0.2,log=False,max_episode_step=1000,random_state=seed) # ilavie - changed seed = seed to random_states=seed
 big_env_fn=lambda seed:GridWorld(big_world,slip=0.2,log=False,max_episode_step=2000,blocksize=(17,17),isDRL=True,viewsize=10,random_state=seed)
 big_renv_fn=lambda seed:ractGridWorld(big_world,slip=0.2,log=False,max_episode_step=2000,blocksize=(17,17),isDRL=True,viewsize=5,random_state=seed,repeat_act=4)
