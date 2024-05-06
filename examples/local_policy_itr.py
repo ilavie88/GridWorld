@@ -1,10 +1,11 @@
 import numpy as np
-from library.gridenv import small_env_fn, train_env_fn
+from library.gridenv import small_env_fn, load_env_fn
 import matplotlib.pyplot as plt
 from library.helper import inf_norm,getMRP
 from PIL import Image
 import os
-from library.misc import parse_arguments, load_policy_from_file, find_goal, find_goal_area
+from library.misc import parse_arguments, load_policy_from_file, find_goal,\
+    find_goal_area, save_policy_dict, save_world_to_file
 
 
 
@@ -15,11 +16,13 @@ script_path = os.environ.get("SCRIPT_PATH")
 
 
 #Local Policy Iteration
-def run_local_PI(env, subset=[1,2,3], seed=42, init_policy=None):
+def run_local_PI(env, output_path, subset=[1,2,3], seed=42, init_policy=None):
+    path = os.path.join(output_path, "results")
     np.random.seed(seed)
     gamma = 0.9
+
     V = np.zeros((env.state_count,1))
-    if init_policy:
+    if init_policy.any():
         pi = init_policy
     else:
         pi = np.random.choice(env.action_values,size=env.state_count) #random policy
@@ -45,7 +48,7 @@ def run_local_PI(env, subset=[1,2,3], seed=42, init_policy=None):
 
         # Save policy iteration screenshot
         image = Image.fromarray(env.getScreenshot(pi))
-        image.save(os.path.join(script_path, 'logs', 'local_policy_itr', f"pi_{i}.png"))  # ilavie - new codeline
+        image.save(os.path.join(path, f"pi_{i}.png"))  # ilavie - new codeline
 
         # Update value function and policy iteration counter
         v_values.append(inf_norm(V))
@@ -54,8 +57,10 @@ def run_local_PI(env, subset=[1,2,3], seed=42, init_policy=None):
         report=f"Converged in {i} iterations\n"
         report+=f"Pi_*= {pi}\n"
         report+=f"V_*= {V.flatten()}\n"
-        with open(os.path.join(script_path, "logs", "local_policy_itr","report.txt"), "w") as f:f.write(report)
+        with open(os.path.join(path,"report.txt"), "w") as f:f.write(report)
         print(report)
+        save_policy_dict(env, path, pi)
+        save_world_to_file(env, path)
 
         plt.plot(v_values,lw=3,ls='--')
         plt.ylabel('$|V|_{\infty}$',fontsize=16)
@@ -64,13 +69,14 @@ def run_local_PI(env, subset=[1,2,3], seed=42, init_policy=None):
         plt.tight_layout()
 
         # plt.savefig("./logs/policy_itr/pi_itr_v.png")
-        plt.savefig(os.path.join(script_path, "logs", "local_policy_itr","pi_itr_v.png")) # ilavie - changed
+        plt.savefig(os.path.join(path, "pi_itr_v.png")) # ilavie - changed
 
 
 
 if __name__ == "__main__":
     args = parse_arguments()
-    np.random.seed(args.seed)
+    seed = args.seed
+    np.random.seed(seed)
     if args.load_env:
         env = load_env_fn(args.seed, args.load_env)
     else:  # Default use small_env_fn
@@ -88,4 +94,4 @@ if __name__ == "__main__":
     subset = find_goal_area(env, goal_coor, radius)
 
 
-    run_local_PI(env, subset, seed, init_policy)
+    run_local_PI(env, args.output_dir, subset, seed, init_policy)

@@ -3,7 +3,7 @@ import json
 import ast
 import os
 import numpy as np
-import re
+import random
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Run Policy Iteration with output directory option')
@@ -17,6 +17,8 @@ def parse_arguments():
                         help='Path to a text file with a saved environment (default: None)')
     parser.add_argument('--radius', type=int, default=4,
                         help='Radius of the neighborhood of the goal state to optimize (default: 4)')
+    parser.add_argument('--save-generated-maze', type=str, default=None,
+                        help='Path to save the generated maze (default: None, save in output directory)')
     args = parser.parse_args()
     return args
 
@@ -87,3 +89,53 @@ def find_goal_area(env, goal_coors, radius):
                     subset_keys.append((i, j))
                     subset_indices.append(env.state_dict[(i,j)]['state'])
     return subset_indices
+
+def generate_maze(maze_size, num_walls, num_holes, file_path):
+    # Initialize maze grid with a frame of 'w'
+    maze = [[' ' for _ in range(maze_size)] for _ in range(maze_size)]
+    for i in range(maze_size):
+        maze[i][0] = 'w'
+        maze[i][maze_size - 1] = 'w'
+        maze[0][i] = 'w'
+        maze[maze_size - 1][i] = 'w'
+
+
+    # Place 'a' (agent) randomly in the maze
+    agent_pos = (random.randint(1, maze_size - 2), random.randint(1, maze_size - 2))
+    maze[agent_pos[0]][agent_pos[1]] = 'a'
+
+    # Place 'g' (goal) randomly in the maze
+    goal_pos = (random.randint(1, maze_size - 2), random.randint(1, maze_size - 2))
+    while goal_pos == agent_pos:
+        goal_pos = (random.randint(1, maze_size - 2), random.randint(1, maze_size - 2))
+    maze[goal_pos[0]][goal_pos[1]] = 'g'
+
+
+    # Fill maze with walls
+    for i in range(num_walls):
+        found_wall_pos = False
+        while not found_wall_pos:
+            wall_pos = (random.randint(1, maze_size - 2), random.randint(1, maze_size - 2))
+            if maze[wall_pos[0]][wall_pos[1]] == ' ':
+                maze[wall_pos[0]][wall_pos[1]] = 'w'
+                found_wall_pos = True
+
+    # Fill maze with holes
+    for i in range(num_holes):
+        found_hole_pos = False
+        while not found_hole_pos:
+            hole_pos = (random.randint(1, maze_size - 2), random.randint(1, maze_size - 2))
+            if maze[hole_pos[0]][hole_pos[1]] == ' ':
+                maze[hole_pos[0]][hole_pos[1]] = 'o'
+                found_hole_pos = True
+
+
+    # Save maze to a text file
+    with open(file_path, 'w') as file:
+        for row in maze:
+            file.write(''.join(row) + '\n')
+
+
+if __name__ == "__main__":
+    args = parse_arguments()
+    generate_maze(30, 300, 100, args.save_generated_maze)

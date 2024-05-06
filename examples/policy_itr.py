@@ -16,13 +16,15 @@ script_path = os.environ.get("SCRIPT_PATH")
 
 np.random.seed(42)
 env=small_env_fn(42)
-gamma=0.9
+
 
 
 
 
 def run_PI(env, output_path, policy_path):
     path = os.path.join(output_path, "results")
+    gamma = 0.9
+
     #Policy Iteration
     V = np.zeros((env.state_count,1))
     if policy_path:
@@ -74,6 +76,5 @@ if __name__ == "__main__":
         env = load_env_fn(args.seed, args.load_env)
     else: # Default use small_env_fn
         env = small_env_fn(args.seed)
-    gamma = 0.9
 
     run_PI(env, args.output_dir, args.load_policy)
