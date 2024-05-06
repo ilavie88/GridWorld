@@ -36,7 +36,7 @@ cliprange=0.2
 cliprange_vf=None
 
 #Training PPO
-train_for_step=10000000 #10M
+train_for_step=100000 #10M
 #Testing PPO
 test_at_iter=5
 num_of_test=10

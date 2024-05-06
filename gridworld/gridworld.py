@@ -34,6 +34,7 @@ class GridWorld(gym.Env):
         self.state_group=pg.sprite.Group()
         self.state_dict=defaultdict(lambda :0)
         self.goal_group=pg.sprite.Group()
+        self.good_states_dict=defaultdict(lambda: 0) # ilavie - added
 
         i=0
         for y,et_row in enumerate(self.world):
@@ -46,11 +47,13 @@ class GridWorld(gym.Env):
                     self.agent=Agent(col=x,row=y,log=self.logging)
                     self.state_group.add(State(col=x,row=y,color=self.state_color))
                     self.state_dict[(x,y)]={'state':i,'reward':-1,'done':False,'type':'norm'}
+                    self.good_states_dict[(x, y)] = {'state': i, 'reward': -1, 'done': False, 'type': 'norm'} # ilavie -adcded
                     i+=1
                     
                 elif block_type=='g':
                     self.goal_group.add(Goal(col=x,row=y))
                     self.state_dict[(x,y)]={'state':i,'reward':100,'done':True,'type':'goal'}
+                    self.good_states_dict[(x, y)] = {'state': i, 'reward': -1, 'done': False, 'type': 'norm'} # ilavie -adcded
                     i+=1
 
                 elif block_type=='o':
@@ -61,9 +64,11 @@ class GridWorld(gym.Env):
                 elif block_type==' ':
                     self.state_group.add(State(col=x,row=y,color=self.state_color))
                     self.state_dict[(x,y)]={'state':i,'reward':-1,'done':False,'type':'norm'}
+                    self.good_states_dict[(x, y)] = {'state': i, 'reward': -1, 'done': False, 'type': 'norm'} # ilavie -adcded
                     i+=1
                     
         self.state_dict=dict(self.state_dict)
+        self.good_states_dict=dict(self.good_states_dict) # ilavie - added
         self.state_count=len(self.state_dict)
         #setting action and observation space
         self.action_space=Discrete(self.action_size)

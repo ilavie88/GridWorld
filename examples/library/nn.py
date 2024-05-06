@@ -8,6 +8,11 @@ from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.models import load_model
 
+import os
+
+script_path = os.environ.get("SCRIPT_PATH")
+
+
 class Q_network():
     def __init__(self,input_size,action_size,trainable=True,exp_name=None,init_from_exp=None,seed=None):
         self.input_size=input_size
@@ -152,7 +157,11 @@ class ActorCritic(Q_network):
 		return tf.math.argmax(logits,axis=1).numpy()[0]
 
 	def load_ppoModel(self,init_from_exp):
-		return load_model(f"./model/{init_from_exp}_ac.h5")
+		# return load_model(f"./model/{init_from_exp}_ac.h5") # ilavie - changed
+		# return load_model(os.path.join(script_path, 'model', f"{init_from_exp}_ac.h5"))
+		return load_model(os.path.join(script_path, 'model', 'itai_models', f"{self.exp_name}_ac.h5"))
+
 
 	def save_ppoModel(self):
-		self.logits.save(f"./model/{self.exp_name}_ac.h5")
+		# self.logits.save(f"./model/{self.exp_name}_ac.h5") # ilavie - changed
+		self.logits.save(os.path.join(script_path, 'model', 'itai_models', f"{self.exp_name}_ac.h5"))

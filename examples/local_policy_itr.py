@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from library.helper import inf_norm,getMRP
 from PIL import Image
 import os
+from library.misc import parse_arguments, load_policy_from_file, find_goal, find_goal_area
 
 
 
@@ -14,18 +15,19 @@ script_path = os.environ.get("SCRIPT_PATH")
 
 
 #Local Policy Iteration
-def local_PI(env, subset=[1,2,3], seed=42):
+def run_local_PI(env, subset=[1,2,3], seed=42, init_policy=None):
     np.random.seed(seed)
-    # env = small_env_fn(seed)
     gamma = 0.9
     V = np.zeros((env.state_count,1))
-    pi = np.random.choice(env.action_values,size=env.state_count) #random policy
+    if init_policy:
+        pi = init_policy
+    else:
+        pi = np.random.choice(env.action_values,size=env.state_count) #random policy
     pi_prev = np.random.choice(env.action_values,size=env.state_count)
 
     i=0
     v_values=[]
 
-    # ChatGPT code
     while np.sum(np.abs(pi - pi_prev)) > 0:  # until no policy change
         pi_prev = pi.copy()
         P_ss, R_s = getMRP(env, pi)
@@ -49,18 +51,6 @@ def local_PI(env, subset=[1,2,3], seed=42):
         v_values.append(inf_norm(V))
         i += 1
 
-
-    # while np.sum(np.abs(pi-pi_prev))>0: #until no policy change
-    #         pi_prev=pi.copy()
-    #         P_ss,R_s=getMRP(env,pi)
-    #         V=R_s+gamma*np.matmul(P_ss,V)
-    #         pi=np.argmax(env.R_sa+gamma*np.squeeze(np.matmul(env.P_sas,V)),axis=1)
-    #         image=Image.fromarray(env.getScreenshot(pi))
-    #         # image.save(f"./logs/policy_itr/pi_{i}.png") # Changed due to some problem in saving the img
-    #         image.save(os.path.join(script_path, 'logs', 'policy_itr', f"pi_{i}.png")) # ilavie - new codeline
-    #         v_values.append(inf_norm(V))
-    #         i+=1
-
         report=f"Converged in {i} iterations\n"
         report+=f"Pi_*= {pi}\n"
         report+=f"V_*= {V.flatten()}\n"
@@ -76,35 +66,26 @@ def local_PI(env, subset=[1,2,3], seed=42):
         # plt.savefig("./logs/policy_itr/pi_itr_v.png")
         plt.savefig(os.path.join(script_path, "logs", "local_policy_itr","pi_itr_v.png")) # ilavie - changed
 
-def find_goal(env):
-    goal_keys = []
-    for key, value in env.state_dict.items():
-        # Check if "reward" is 100 and "done" is True
-        if value.get('reward') == 100 and value.get('done') == True:
-            goal_keys.append(key)
-    return goal_keys
 
-def find_goal_area(env, goal_coors, radius):
-    subset_keys = []
-    subset_indices = []
-    for goal in goal_coors:
-        for i in range(goal[0] - radius, goal[0] + radius + 1):
-            for j in range(goal[1] - radius, goal[1] + radius + 1):
-                if (i,j) in env.state_dict:
-                    subset_keys.append((i, j))
-                    subset_indices.append(env.state_dict[(i,j)]['state'])
-    return subset_indices
 
 if __name__ == "__main__":
-    seed = 42
-    np.random.seed(seed)
+    args = parse_arguments()
+    np.random.seed(args.seed)
+    if args.load_env:
+        env = load_env_fn(args.seed, args.load_env)
+    else:  # Default use small_env_fn
+        env = small_env_fn(args.seed)
 
-    radius = 2
+    if args.load_policy:
+        init_policy = load_policy_from_file(env, args.load_policy)
+    else:
+        init_policy = None
+
+    radius = args.radius
     gamma = 0.9
 
-    env = small_env_fn(seed)
     goal_coor = find_goal(env)
     subset = find_goal_area(env, goal_coor, radius)
 
 
-    local_PI(env, subset, seed)
+    run_local_PI(env, subset, seed, init_policy)

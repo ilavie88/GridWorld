@@ -1,5 +1,6 @@
 import time
 from gridworld import GridWorld,ractGridWorld
+from library.misc import load_world_from_txt
 
 small_world=\
     """
@@ -74,10 +75,11 @@ big_world=\
     wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
     """
 
-train_env_fn=lambda seed:GridWorld(train_world,slip=0.2,log=False,max_episode_step=1000,random_state=seed) # ilavie - changed seed = seed to random_states=seed
-small_env_fn=lambda seed:GridWorld(small_world,slip=0.2,log=False,max_episode_step=1000,random_state=seed) # ilavie - changed seed = seed to random_states=seed
-big_env_fn=lambda seed:GridWorld(big_world,slip=0.2,log=False,max_episode_step=2000,blocksize=(17,17),isDRL=True,viewsize=10,random_state=seed)
-big_renv_fn=lambda seed:ractGridWorld(big_world,slip=0.2,log=False,max_episode_step=2000,blocksize=(17,17),isDRL=True,viewsize=5,random_state=seed,repeat_act=4)
+load_env_fn = lambda seed, path: GridWorld(load_world_from_txt(path), slip=0.2, log=False, max_episode_step=1000, random_state=seed) # ilavie - changed seed = seed to random_states=seed
+train_env_fn = lambda seed: GridWorld(train_world, slip=0.2, log=False, max_episode_step=1000, random_state=seed) # ilavie - changed seed = seed to random_states=seed
+small_env_fn = lambda seed: GridWorld(small_world, slip=0.2, log=False, max_episode_step=1000, random_state=seed) # ilavie - changed seed = seed to random_states=seed
+big_env_fn = lambda seed: GridWorld(big_world, slip=0.2, log=False, max_episode_step=2000,blocksize=(17,17),isDRL=True,viewsize=10, random_state=seed)
+big_renv_fn = lambda seed: ractGridWorld(big_world, slip=0.2, log=False, max_episode_step=2000, blocksize=(17,17), isDRL=True, viewsize=5, random_state=seed, repeat_act=4)
 
 def make_env(env_fn,seed=0):
     def _init():
