@@ -23,6 +23,10 @@ def parse_arguments():
                         help='Whether to save only the last image of output PI')
     parser.add_argument('--generated-maze-size', type=int, default=20,
                         help='Size of the generated maze (default: 20)')
+    parser.add_argument('--gamma', type=float, default=0.99,
+                        help='Discount factor for future rewards (default: 0.99)')
+    parser.add_argument('--evaluation-radius', type=int, default=None,
+                        help='Evaluation radius for the policy (default: None)')
     args = parser.parse_args()
     return args
 

@@ -1,7 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" remoteFilesAllowedToDisappearOnAutoupload="false">
+  <component name="PublishConfigData" autoUpload="Always" serverName="ilavie@132.68.56.77:22" remoteFilesAllowedToDisappearOnAutoupload="false">
     <serverData>
+      <paths name="ilavie@132.68.56.77:22">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/ilavie/local_PI/code" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
       <paths name="itai@rll-robot-lab5.ef.technion.ac.il:22">
         <serverdata>
           <mappings>
@@ -94,5 +101,6 @@
         </serverdata>
       </paths>
     </serverData>
+    <option name="myAutoUpload" value="ALWAYS" />
   </component>
 </project>

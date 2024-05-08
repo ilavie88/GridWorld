@@ -4,7 +4,7 @@ import pygame as pg
 from collections import deque
 from gym.spaces import Box,Discrete
 from collections import defaultdict
-from modules import Agent, Wall, Goal, State, Hole, Block
+from .modules import Agent, Wall, Goal, State, Hole, Block
 
 class GridWorld(gym.Env):
     def __init__(self,world,slip=0.2,log=False,max_episode_step=1000,blocksize=(50,50),isDRL=False,viewsize=10,random_state=None):

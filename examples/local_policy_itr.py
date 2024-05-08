@@ -8,10 +8,18 @@ from library.misc import parse_arguments, load_policy_from_file, find_goal,\
     find_goal_area, save_policy_dict, save_world_to_file
 
 #Local Policy Iteration
-def run_local_PI(env, output_path, subset=[1,2,3], seed=42, init_policy=None, save_only_last_img=True):
+def run_local_PI(env, args, subset=[1,2,3], eval_subset=[1,2,3]):
+    output_path = args.output_dir
+    seed = args.seed
+    save_only_last_img = args.save_only_last_img
+    gamma = args.gamma
+    if args.load_policy:
+        init_policy = load_policy_from_file(env, args.load_policy)
+    else:
+        init_policy = None
+
     path = os.path.join(output_path, "results")
     np.random.seed(seed)
-    gamma = 0.9
 
     V = np.zeros((env.state_count,1))
     if init_policy:
@@ -22,12 +30,21 @@ def run_local_PI(env, output_path, subset=[1,2,3], seed=42, init_policy=None, sa
 
     i=0
     v_values=[]
+    if args.evaluation_radius:
+        P_ss, R_s = getMRP(env, pi)
+        A = np.eye(P_ss.shape[0], P_ss.shape[1]) - gamma * P_ss
+        V = np.matmul(np.linalg.inv(A), R_s)
 
     while np.sum(np.abs(pi - pi_prev)) > 0:  # until no policy change
         pi_prev = pi.copy()
         P_ss, R_s = getMRP(env, pi)
-        A = np.eye(P_ss.shape[0], P_ss.shape[1]) - gamma*P_ss
-        V = np.matmul(np.linalg.inv(A),R_s)
+        if not args.evaluation_radius:
+            A = np.eye(P_ss.shape[0], P_ss.shape[1]) - gamma*P_ss
+            V = np.matmul(np.linalg.inv(A), R_s)
+        else:
+            V_eval = R_s[eval_subset] + gamma * np.matmul(P_ss[eval_subset], V)
+            V[eval_subset] = V_eval
+
 
         # Extract a subset of states
         subset_V = V[subset]
@@ -49,7 +66,7 @@ def run_local_PI(env, output_path, subset=[1,2,3], seed=42, init_policy=None, sa
 
     if save_only_last_img:
         image = Image.fromarray(env.getScreenshot(pi))
-        image.save(os.path.join(path, f"pi_{i}.png"))  # ilavie - new codeline
+        image.save(os.path.join(path, f"pi_{i}.png"), format='PNG')  # ilavie - new codeline
     report=f"Converged in {i} iterations\n"
     report+=f"Pi_*= {pi}\n"
     report+=f"V_*= {V.flatten()}\n"
@@ -82,10 +99,11 @@ if __name__ == "__main__":
         init_policy = None
 
     radius = args.radius
-    gamma = 0.9
+    eval_radius = args.evaluation_radius
 
     goal_coor = find_goal(env)
     subset = find_goal_area(env, goal_coor, radius)
+    eval_subset = find_goal_area(env, goal_coor, eval_radius)
 
 
-    run_local_PI(env, args.output_dir, subset, seed, init_policy, args.save_only_last_img)
+    run_local_PI(env, args, subset, eval_subset)
