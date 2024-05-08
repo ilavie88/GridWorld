@@ -19,6 +19,10 @@ def parse_arguments():
                         help='Radius of the neighborhood of the goal state to optimize (default: 4)')
     parser.add_argument('--save-generated-maze', type=str, default=None,
                         help='Path to save the generated maze (default: None, save in output directory)')
+    parser.add_argument('--save-only-last-img', action='store_true',
+                        help='Whether to save only the last image of output PI')
+    parser.add_argument('--generated-maze-size', type=int, default=20,
+                        help='Size of the generated maze (default: 20)')
     args = parser.parse_args()
     return args
 
@@ -138,4 +142,8 @@ def generate_maze(maze_size, num_walls, num_holes, file_path):
 
 if __name__ == "__main__":
     args = parse_arguments()
-    generate_maze(30, 300, 100, args.save_generated_maze)
+    maze_size = args.generated_maze_size
+    num_walls = maze_size*maze_size // 5
+    # num_holes = maze_size*maze_size // 50
+    num_holes = 0
+    generate_maze(maze_size, num_walls, num_holes, args.save_generated_maze)

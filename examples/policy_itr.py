@@ -21,9 +21,9 @@ env=small_env_fn(42)
 
 
 
-def run_PI(env, output_path, policy_path):
+def run_PI(env, output_path, policy_path, save_only_last_img=True):
     path = os.path.join(output_path, "results")
-    gamma = 0.9
+    gamma = 0.99
 
     #Policy Iteration
     V = np.zeros((env.state_count,1))
@@ -46,10 +46,13 @@ def run_PI(env, output_path, policy_path):
         pi=np.argmax(env.R_sa+gamma*np.squeeze(np.matmul(env.P_sas,V)),axis=1)
         image=Image.fromarray(env.getScreenshot(pi))
         # image.save(f"./logs/policy_itr/pi_{i}.png") # Changed due to some problem in saving the img
-        image.save(os.path.join(path, f"pi_{i}.png")) # ilavie - new codeline
+        if not save_only_last_img:
+            image.save(os.path.join(path, f"pi_{i}.png")) # ilavie - new codeline
         v_values.append(inf_norm(V))
         i+=1
 
+    if save_only_last_img:
+        image.save(os.path.join(path, f"pi_{i}.png"))
     report=f"Converged in {i} iterations\n"
     report+=f"Pi_*= {pi}\n"
     report+=f"V_*= {V.flatten()}\n"
@@ -77,4 +80,4 @@ if __name__ == "__main__":
     else: # Default use small_env_fn
         env = small_env_fn(args.seed)
 
-    run_PI(env, args.output_dir, args.load_policy)
+    run_PI(env, args.output_dir, args.load_policy, args.save_only_last_img)
