@@ -27,6 +27,10 @@ def parse_arguments():
                         help='Discount factor for future rewards (default: 0.99)')
     parser.add_argument('--evaluation-radius', type=int, default=None,
                         help='Evaluation radius for the policy (default: None)')
+    parser.add_argument('--lookahead', type=int, default=1,
+                        help='Lookahead parameter for policy evaluation (default: 1)')
+    parser.add_argument('--exact-evaluation', action='store_true',
+                        help='Whether to perform exact evaluation (default: True)')
     args = parser.parse_args()
     return args
 

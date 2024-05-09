@@ -10,47 +10,40 @@ from library.misc import parse_arguments, load_policy_from_file, save_policy_dic
 
 # Added code to make sure file exists
 # Construct the full file path using SCRIPT_PATH
-script_path = os.environ.get("SCRIPT_PATH")
 
-
-
-np.random.seed(42)
-env=small_env_fn(42)
-
-
-
-
-
-def run_PI(env, args):
+def run_h_PI(env, args):
     output_path = args.output_dir
     policy_path = args.load_policy
     save_only_last_img = args.save_only_last_img
+    lookahead = args.lookahead
     gamma = args.gamma
     exact_eval = args.exact_evaluation
+
 
     path = os.path.join(output_path, "results")
 
     #Policy Iteration
-    V = np.zeros((env.state_count,1))
+    V = np.zeros((env.state_count, 1))
     if policy_path:
         pi = np.array(load_policy_from_file(env, policy_path))
         pi = pi.astype(np.int)
     else:
-        pi=np.random.choice(env.action_values,size=env.state_count) #random policy
-    pi_prev=np.random.choice(env.action_values,size=env.state_count)
+        pi = np.random.choice(env.action_values,size=env.state_count) #random policy
+    pi_prev = np.random.choice(env.action_values,size=env.state_count)
 
     i=0
     v_values=[]
 
     while np.sum(np.abs(pi-pi_prev))>0: #until no policy change
-        pi_prev=pi.copy()
-        P_ss,R_s=getMRP(env,pi)
-        A = np.eye(P_ss.shape[0], P_ss.shape[1]) - gamma * P_ss
-        if exact_eval:
-            V = np.matmul(np.linalg.inv(A), R_s)
-        else:
-            V = R_s+gamma*np.matmul(P_ss,V)
-        pi = np.argmax(env.R_sa+gamma*np.squeeze(np.matmul(env.P_sas,V)),axis=1)
+        pi_prev = pi.copy()
+        for i in range(lookahead):
+            P_ss, R_s = getMRP(env,pi)
+            A = np.eye(P_ss.shape[0], P_ss.shape[1]) - gamma * P_ss
+            if exact_eval:
+                V = np.matmul(np.linalg.inv(A), R_s)
+            else:
+                V = R_s + gamma * np.matmul(P_ss, V)
+            pi = np.argmax(env.R_sa + gamma * np.squeeze(np.matmul(env.P_sas, V)), axis=1)
         image = Image.fromarray(env.getScreenshot(pi))
         if not save_only_last_img:
             image.save(os.path.join(path, f"pi_{i}.png")) # ilavie - new codeline
@@ -59,9 +52,9 @@ def run_PI(env, args):
 
     if save_only_last_img:
         image.save(os.path.join(path, f"pi_{i}.png"))
-    report=f"Converged in {i} iterations\n"
-    report+=f"Pi_*= {pi}\n"
-    report+=f"V_*= {V.flatten()}\n"
+    report = f"Converged in {i} iterations\n"
+    report += f"Pi_*= {pi}\n"
+    report += f"V_*= {V.flatten()}\n"
     with open(os.path.join(path, "report.txt"), "w") as f:f.write(report)
     print(report)
     save_policy_dict(env, path, pi)
@@ -86,4 +79,4 @@ if __name__ == "__main__":
     else: # Default use small_env_fn
         env = small_env_fn(args.seed)
 
-    run_PI(env, args.output_dir, args.load_policy, args.save_only_last_img)
+    run_h_PI(env, args)
