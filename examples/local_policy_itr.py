@@ -5,14 +5,17 @@ from library.helper import inf_norm,getMRP
 from PIL import Image
 import os
 from library.misc import parse_arguments, load_policy_from_file, find_goal,\
-    find_goal_area, save_policy_dict, save_world_to_file
+    find_goal_area, save_policy_dict, save_world_to_file, eval_stationary_point
+
 
 #Local Policy Iteration
-def run_local_PI(env, args, subset=[1,2,3], eval_subset=[1,2,3]):
+def run_local_PI(env, args, subset=[1,2,3], eval_subset=[1,2,3], saved_policy_name='policy_state_dict.txt'):
     output_path = args.output_dir
     seed = args.seed
     save_only_last_img = args.save_only_last_img
     gamma = args.gamma
+    policy_dict={}
+
     if args.load_policy:
         init_policy = load_policy_from_file(env, args.load_policy)
     else:
@@ -21,8 +24,8 @@ def run_local_PI(env, args, subset=[1,2,3], eval_subset=[1,2,3]):
     path = os.path.join(output_path, "results")
     np.random.seed(seed)
 
-    V = np.zeros((env.state_count,1))
-    if init_policy:
+    V = np.zeros((env.state_count, 1))
+    if init_policy is not None:
         pi = init_policy
     else:
         pi = np.random.choice(env.action_values,size=env.state_count) #random policy
@@ -30,20 +33,22 @@ def run_local_PI(env, args, subset=[1,2,3], eval_subset=[1,2,3]):
 
     i=0
     v_values=[]
-    if args.evaluation_radius:
+    if not args.exact_evaluation:
         P_ss, R_s = getMRP(env, pi)
         A = np.eye(P_ss.shape[0], P_ss.shape[1]) - gamma * P_ss
         V = np.matmul(np.linalg.inv(A), R_s)
 
     while np.sum(np.abs(pi - pi_prev)) > 0:  # until no policy change
         pi_prev = pi.copy()
+        policy_dict[pi_prev.tobytes()] = 1
         P_ss, R_s = getMRP(env, pi)
-        if not args.evaluation_radius:
+        if args.exact_evaluation:
             A = np.eye(P_ss.shape[0], P_ss.shape[1]) - gamma*P_ss
             V = np.matmul(np.linalg.inv(A), R_s)
         else:
             V_eval = R_s[eval_subset] + gamma * np.matmul(P_ss[eval_subset], V)
             V[eval_subset] = V_eval
+            # V = eval_stationary_point(V.copy(), R_s, P_ss, gamma, eval_subset)
 
 
         # Extract a subset of states
@@ -63,6 +68,8 @@ def run_local_PI(env, args, subset=[1,2,3], eval_subset=[1,2,3]):
         # Update value function and policy iteration counter
         v_values.append(inf_norm(V))
         i += 1
+        if pi.tobytes() in policy_dict:
+            break
 
     if save_only_last_img:
         image = Image.fromarray(env.getScreenshot(pi))
@@ -72,7 +79,7 @@ def run_local_PI(env, args, subset=[1,2,3], eval_subset=[1,2,3]):
     report+=f"V_*= {V.flatten()}\n"
     with open(os.path.join(path,"report.txt"), "w") as f:f.write(report)
     print(report)
-    save_policy_dict(env, path, pi)
+    save_policy_dict(env, path, pi, saved_policy_name)
     save_world_to_file(env, path)
 
     plt.plot(v_values,lw=3,ls='--')
@@ -83,6 +90,8 @@ def run_local_PI(env, args, subset=[1,2,3], eval_subset=[1,2,3]):
 
     # plt.savefig("./logs/policy_itr/pi_itr_v.png")
     plt.savefig(os.path.join(path, "pi_itr_v.png")) # ilavie - changed
+    number_of_iterations = i
+    return pi, V, number_of_iterations
 
 if __name__ == "__main__":
     args = parse_arguments()

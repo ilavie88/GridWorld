@@ -34,6 +34,16 @@ def parse_arguments():
     args = parser.parse_args()
     return args
 
+def eval_stationary_point(V0, R, P, gamma, eval_subset, epsilon=1):
+    V_prev = V0.copy()
+    V = V0.copy()
+    V_eval = R[eval_subset] + gamma * np.matmul(P[eval_subset], V)
+    V[eval_subset] = V_eval
+    while np.linalg.norm(V - V_prev) > epsilon:
+        V_prev = V.copy()
+        V_eval = R[eval_subset] + gamma * np.matmul(P[eval_subset], V)
+        V[eval_subset] = V_eval
+    return V
 
 def save_world_to_file(env, file_path):
     with open(os.path.join(file_path, 'exp_world.txt'), 'w') as file:
@@ -56,11 +66,12 @@ def load_policy_from_file(env, file_path):
     pi = np.zeros(len(policy_dict))
     for key, val in policy_dict.items():
         tuple_key = ast.literal_eval(key)
-        pi[env.state_dict[tuple_key]['state']] = val
+        if tuple_key in env.state_dict:
+            pi[env.state_dict[tuple_key]['state']] = val
     pi = np.array(pi)
     return pi.astype(np.int)
 
-def save_policy_dict(env, path, policy):
+def save_policy_dict(env, path, policy, policy_name="policy_state_dict"):
     # Create a new dictionary to store the policy values
     policy_start_dict = {}
 
@@ -75,7 +86,7 @@ def save_policy_dict(env, path, policy):
         policy_start_dict[str_key] = policy_value
 
     # Define the file path
-    file_path = os.path.join(path, "policy_start_dict.txt")
+    file_path = os.path.join(path, policy_name)
 
     # Write the policy_start_dict to the file
     with open(file_path, 'w') as file:

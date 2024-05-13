@@ -45,19 +45,21 @@ def run_PI(env, args):
     while np.sum(np.abs(pi-pi_prev))>0: #until no policy change
         pi_prev=pi.copy()
         P_ss,R_s=getMRP(env,pi)
-        A = np.eye(P_ss.shape[0], P_ss.shape[1]) - gamma * P_ss
         if exact_eval:
+            A = np.eye(P_ss.shape[0], P_ss.shape[1]) - gamma * P_ss
             V = np.matmul(np.linalg.inv(A), R_s)
         else:
             V = R_s+gamma*np.matmul(P_ss,V)
         pi = np.argmax(env.R_sa+gamma*np.squeeze(np.matmul(env.P_sas,V)),axis=1)
-        image = Image.fromarray(env.getScreenshot(pi))
+
         if not save_only_last_img:
+            image = Image.fromarray(env.getScreenshot(pi))
             image.save(os.path.join(path, f"pi_{i}.png")) # ilavie - new codeline
         v_values.append(inf_norm(V))
         i+=1
 
     if save_only_last_img:
+        image = Image.fromarray(env.getScreenshot(pi))
         image.save(os.path.join(path, f"pi_{i}.png"))
     report=f"Converged in {i} iterations\n"
     report+=f"Pi_*= {pi}\n"
@@ -75,6 +77,7 @@ def run_PI(env, args):
 
     # plt.savefig("./logs/policy_itr/pi_itr_v.png")
     plt.savefig(os.path.join(path,"pi_itr_v.png")) # ilavie - changed
+    return pi, V
 
 
 
@@ -86,4 +89,4 @@ if __name__ == "__main__":
     else: # Default use small_env_fn
         env = small_env_fn(args.seed)
 
-    run_PI(env, args.output_dir, args.load_policy, args.save_only_last_img)
+    run_PI(env, args)

@@ -11,7 +11,7 @@ from library.misc import parse_arguments, load_policy_from_file, save_policy_dic
 # Added code to make sure file exists
 # Construct the full file path using SCRIPT_PATH
 
-def run_h_PI(env, args):
+def run_local_h_PI(env, args, subset=[1,2,3], eval_subset=[1,2,3], saved_policy_name='policy_state_dict.txt'):
     output_path = args.output_dir
     policy_path = args.load_policy
     save_only_last_img = args.save_only_last_img
@@ -34,23 +34,44 @@ def run_h_PI(env, args):
     i=0
     v_values=[]
 
+    if exact_eval:
+        P_ss, R_s = getMRP(env, pi)
+        A = np.eye(P_ss.shape[0], P_ss.shape[1]) - gamma * P_ss
+        V = np.matmul(np.linalg.inv(A), R_s)
+    policy_dict = {}
+
     while np.sum(np.abs(pi-pi_prev))>0: #until no policy change
         pi_prev = pi.copy()
+        policy_dict[pi_prev.tobytes()] = 1
         for j in range(lookahead):
             P_ss, R_s = getMRP(env,pi)
-            A = np.eye(P_ss.shape[0], P_ss.shape[1]) - gamma * P_ss
             if exact_eval:
+                A = np.eye(P_ss.shape[0], P_ss.shape[1]) - gamma * P_ss
                 V = np.matmul(np.linalg.inv(A), R_s)
             else:
-                V = R_s + gamma * np.matmul(P_ss, V)
-            pi = np.argmax(env.R_sa + gamma * np.squeeze(np.matmul(env.P_sas, V)), axis=1)
-        image = Image.fromarray(env.getScreenshot(pi))
+                V_eval = R_s[eval_subset] + gamma * np.matmul(P_ss[eval_subset], V)
+                V[eval_subset] = V_eval
+                # V = eval_stationary_point(V.copy(), R_s, P_ss, gamma, eval_subset)
+
+            # Extract a subset of states to optimize
+            subset_V = V[subset]
+            subset_P_sas = env.P_sas[subset][:, :, subset]
+            subset_R_sa = env.R_sa[subset]
+
+            # Policy lookahead optimization
+            subset_pi = np.argmax(subset_R_sa + gamma * np.squeeze(np.matmul(subset_P_sas, subset_V)), axis=1)
+            pi[subset] = subset_pi
+
         if not save_only_last_img:
+            image = Image.fromarray(env.getScreenshot(pi))
             image.save(os.path.join(path, f"pi_{i}.png")) # ilavie - new codeline
         v_values.append(inf_norm(V))
         i+=1
+        if pi.tobytes() in policy_dict:
+            break
 
     if save_only_last_img:
+        image = Image.fromarray(env.getScreenshot(pi))
         image.save(os.path.join(path, f"pi_{i}.png"))
     report = f"Converged in {i} iterations\n"
     report += f"Pi_*= {pi}\n"
@@ -68,6 +89,8 @@ def run_h_PI(env, args):
 
     # plt.savefig("./logs/policy_itr/pi_itr_v.png")
     plt.savefig(os.path.join(path,"pi_itr_v.png")) # ilavie - changed
+    number_of_iterations = i
+    return pi, V, number_of_iterations
 
 
 
